@@ -1,0 +1,13 @@
+Package: spotify-sequence-analysis
+Title: Analysis of Spotify Sequence Data
+Version: 0.1
+Authors@R: person("Sophia", "Hadash", email = "s.hadash@tue.nl",
+                  role = c("aut", "cre"))
+Description: Analysis of Spotify Sequence Data
+Depends: R (>= 3.5.2)
+License: UNLICENSED
+LazyData: true
+Imports:
+	data.table (>=1.12.6),
+    dplyr (>=0.8.3),
+    ggplot2 (>=3.2.1)

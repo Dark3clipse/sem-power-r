@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="launch" type="RRunConfigurationType" factoryName="R">
+    <option name="SCRIPT_PATH" value="$PROJECT_DIR$/R/index.R" />
+    <option name="SCRIPT_ARGS" value="" />
+    <option name="WORKING_DIRECTORY_PATH" value="$PROJECT_DIR$/" />
+    <option name="PASS_PARENT_ENVS" value="true" />
+    <method v="2" />
+  </configuration>
+</component>
