@@ -3,3 +3,6 @@
 /.directory
 /data
 /work
+.Rproj.user
+*.Rproj
+.Rbuildignore

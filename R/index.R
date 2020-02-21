@@ -1,44 +1,91 @@
 
 # includes
-source("R/functions.R")
-library("ggplot2")
-library("dplyr")
-require(data.table)
+suppressWarnings(suppressMessages(suppressPackageStartupMessages({
+	source("R/functions.R")
+	source("R/simulation.R");
+	library("ggplot2")
+	library("dplyr")
+	library("psych")
+	library("stats")
+	library("pracma")
+	library("whitening")
+	library("Matrix")
+	library("MASS")
+	library("sem")
+	library("lavaan")
+	require(data.table)
+})));
 
-# load data
-t <- read.table("data/track_features/tf_000000000000.csv", TRUE, ",", nrows=10000000000) %>% select(track_id, tempo, valence)
-t <- rbind(t, read.table("data/track_features/tf_000000000001.csv", TRUE, ",", nrows=10000000000) %>% select(track_id, tempo, valence))
-d <- read.table("data/training_set/log_mini.csv", TRUE, ",")
+mc = MCSimulator();
+mc = set(mc,
+	150,
+	4,
+	t(c("explanation", "feedback")),
+	t(c("gender", "age")),
+	t(c("control", "effort", "transparency", "personalization", "rec_quality", "exp_quality", "trust", "usefulness", "satisfaction")),
+	2,
+	c(0, 0, 0, 1, 0, 0, 1, 1),
+	.7, # factor loadings
+	0,  # factor correlations
+	.3 # regression path strength
+);
+#mc = generate(mc);
+#mc = score(mc);
+this=mc;
 
-# pre-processing
-d = d %>% inner_join(t, by=c("track_id_clean"="track_id")) %>% arrange(session_id, session_position)
-df = data.table(d)
-df[ , vdiff := valence - shift(valence), by = session_id]
-df[ , tdiff := tempo - shift(tempo), by = session_id]
-df[ , vdiff_abs := abs(valence - shift(valence)), by = session_id]
-df[ , tdiff_abs := abs(tempo - shift(tempo)), by = session_id]
-df[ , valid:=session_position-shift(session_position)==1, by = session_id]
-d = setDF(df)
-rm(df)
-d = d %>% filter(valid==TRUE) %>% mutate(skipped=ifelse(not_skipped=="true", 0, 1))
+this = generate(this);
+m = score(this);
 
-# visualization
-ggplot(d, aes(x=vdiff, color=factor(skipped, levels=c(1, 0), labels=c("true", "false")))) +
-	geom_histogram(fill="white", alpha=0.5, position="identity")+
-	scale_color_manual("skipped",values=c("red","blue"))
+cn=c("v", "N", "factor loadings", "regression coefficients", "factor-indicator se", "factor-indicator z", "factor-indicator p", "transparency ~ explanation [est]", "std.err", "z", "p", "trust ~ transparency [est]", "std.err", "z", "p", "personalization ~ exp_quality + feedback [est1]", "std.err", "z", "p", "[est2]", "std.err", "z", "p", "rec_quality ~ personalization [est]", "std.err", "z", "p" ,"effort ~ feedback [est]", "std.err", "z", "p", "control ~ feedback [est]", "std.err", "z", "p", "usefulness ~ trust + rec_quality + effort + control [est1]", "std.err", "z", "p", "[est2]", "std.err", "z", "p", "[est3]", "std.err", "z", "p", "[est4]", "std.err", "z", "p", "satisfaction ~ usefulness [est]", "std.err", "z", "p");
+D = matrix(, ncol=55);
+colnames(D) = cn;
 
-ggplot(d, aes(x=tdiff, color=factor(skipped, levels=c(1, 0), labels=c("true", "false")))) +
-	geom_histogram(fill="white", alpha=0.5, position="identity")+
-	scale_color_manual("skipped",values=c("red","blue"))
 
-ggplot(d, aes(x=vdiff_abs, color=factor(skipped, levels=c(1, 0), labels=c("true", "false")))) +
-	geom_histogram(fill="white", alpha=0.5, position="identity")+
-	scale_color_manual("skipped",values=c("red","blue"))
+colSd <- function (x, na.rm=FALSE) apply(X=x, MARGIN=2, FUN=sd, na.rm=na.rm)
 
-ggplot(d, aes(x=tdiff_abs, color=factor(skipped, levels=c(1, 0), labels=c("true", "false")))) +
-	geom_histogram(fill="white", alpha=0.5, position="identity")+
-	scale_color_manual("skipped",values=c("red","blue"))
+N = c(50, 50, 100, 120, 150, 180, 200, 260, 300);
+fl= c(.50, .60, .70);
+rs= c(.25, .30, .40);
+bootstraps = 25;
+for(n in 1:9){
+	this@N = N[n];
+	for (l in 1:3){
+		this@factor_loadings = fl[l];
+		for (s in 1:3){
+			this@regression_path_strength = rs[s];
 
-# statistics
-m=glm(skipped ~ vdiff_abs + tdiff_abs, d, family = "binomial")
-summary(m)
+			suppressWarnings(suppressMessages(suppressPackageStartupMessages({
+			Db = matrix(, ncol=55);
+			colnames(Db) = cn;
+			for (b in 1:bootstraps){
+				this = generate(this);
+				m = score(this);
+				Di = cbind(cbind(0, this@N, this@factor_loadings, this@regression_path_strength), m$PE[2, 6:8], m$PE[37, 5:8], m$PE[38, 5:8], m$PE[39, 5:8], m$PE[40, 5:8], m$PE[41, 5:8], m$PE[42, 5:8], m$PE[43, 5:8], m$PE[44, 5:8], m$PE[45, 5:8], m$PE[46, 5:8], m$PE[47, 5:8], m$PE[48, 5:8]);
+				colnames(Di)=cn;
+				Db = rbind(Db, Di);
+			}
+			cm = t(colMeans(Db, na.rm = T));
+			sd = t(colSd(Db, na.rm=T));
+
+			cm[1]=1
+			Di = cm;
+			colnames(Di)=cn;
+			D = rbind(D, Di);
+
+			sd[1] = 2;
+			Di = sd;
+			colnames(Di)=cn;
+			D = rbind(D, Di);
+
+			pow = 1.64 * sd;
+			pow[1] = 3;
+			Di = pow;
+			colnames(Di)=cn;
+			D = rbind(D, Di);
+})));
+		}
+	}
+}
+write.csv(D, file="data/output.csv");
+
+

@@ -1,12 +1,15 @@
-# Analysis of Spotify Sequential Dataset
+# Power Analysis for SEM models in R
 
-In this project I analyzed the Spotify sequential dataset for differences in skip behavior based valence and tempo audio features.
+This project contains R functions to generate data for structural equation modeling. This functionality can be used to run simulations in order to estimate power or required sample size.
 
-## Data
 
-The following dataset was used:
+The code in this project is written as generic as possible although some assumptions are made, including:
+* All regression path coefficients are equal
+* All factor loadings are equal
+* All latent factors have an equal number of indicators.
 
-[Spotify Sequential Skip Prediction Challenge Dataset](https://www.aicrowd.com/challenges/spotify-sequential-skip-prediction-challenge/dataset_files)
+*Disclaimer:* Some parts of the code may be tailored to a specific use case. This will probably change in future updates.
+
 
 ## Authors
 
