@@ -1,7 +1,7 @@
 /.git
 !/.idea
 /.directory
-/data
+/data/*
 /work
 .Rproj.user
 *.Rproj
