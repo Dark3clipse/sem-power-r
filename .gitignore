@@ -1,8 +1,8 @@
 /.git
 !/.idea
 /.directory
-/data
+/data/*
 /work
 .Rproj.user
-spotify-sequence.Rproj
+*.Rproj
 .Rbuildignore
