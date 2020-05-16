@@ -1,0 +1,48 @@
+version: "3.7"
+
+services:
+  db:
+    image: mysql:8.0.19
+    environment:
+      - MYSQL_ROOT_PASSWORD=an0i28gdnn9
+      - MYSQL_USER=shadash
+      - MYSQL_PASSWORD=an0i28gdnn9
+    command: --secure-file-priv=/import
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./dump:/docker-entrypoint-initdb.d
+      - persistent:/var/lib/mysql
+      - ./import:/import
+    networks:
+      - spotify-sequence-net
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    volumes:
+      - ./uploads.ini:/usr/local/etc/php/conf.d/php-phpmyadmin.ini
+    depends_on:
+      - db
+    environment:
+      - UPLOAD_LIMIT=1024M
+    links:
+      - db:db
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8973:80"
+    networks:
+      - spotify-sequence-net
+volumes:
+  persistent:
+    driver: local
+networks:
+  spotify-sequence-net:
+    name: spotify-sequence-net
